@@ -242,7 +242,8 @@ def analyze_message(request: ScamRequest):
 
         interaction = client.interactions.create(
 
-            model="gemini-3.8-flash",
+            # model="gemini-3.8-flash",
+            model="gemini-3.5-flash-lite",
 
             system_instruction=SCAM_DETECTOR_INSTRUCTIONS,
 
