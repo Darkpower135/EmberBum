@@ -1,4 +1,7 @@
 import streamlit as st
+import requests
+
+BACKEND_URL = "http://127.0.0.1:8000/analyze"
 
 
 def run_app():
@@ -244,28 +247,36 @@ def run_app():
             st.warning("Paste an email first.")
         else:
             with st.spinner("Gemini is inspecting the email..."):
+                try:
+                    response = requests.post(
+                        BACKEND_URL,
+                        json={"message": email_text},
+                        timeout=30
+                    )
 
-                result = {
-                    "risk_level": "HIGH",
-                    "scam_type": "Phishing",
-                    "summary": "This email shows multiple signs commonly associated with phishing attempts.",
-                    "red_flags": [
-                        "Uses urgent language",
-                        "Threatens account suspension",
-                        "Requests immediate action",
-                        "Encourages clicking an unknown link",
-                        "Uses a generic greeting"
-                    ],
-                    "recommended_actions": [
-                        "Do not click any links",
-                        "Do not reply to the sender",
-                        "Visit the official company website directly",
-                        "Check the sender's email address",
-                        "Report the email as phishing"
-                    ]
-                }
+                    if response.status_code == 200:
+                        result = response.json()
+                        display_results(result)
 
-            display_results(result)
+                    else:
+                        st.error(
+                            f"Backend error ({response.status_code}): "
+                            f"{response.text}"
+                        )
+
+                except requests.exceptions.ConnectionError:
+                    st.error(
+                        "Could not connect to the backend. "
+                        "Make sure backend.py is running."
+                    )
+
+                except requests.exceptions.Timeout:
+                    st.error(
+                        "The analysis took too long. Please try again."
+                    )
+
+                except Exception as error:
+                    st.error(f"Something went wrong: {error}")
 
     st.markdown(
         """
@@ -282,6 +293,7 @@ def display_results(result):
     st.write("")
 
     risk = result.get("risk_level", "UNKNOWN").upper()
+    risk_score = result.get("risk_score", 0)
 
     if risk == "HIGH":
         css_class = "high-risk"
@@ -297,10 +309,18 @@ def display_results(result):
         f"""
         <div class="{css_class}">
             <div class="section-label">Risk Assessment</div>
+
             <h2>{emoji} {risk} RISK</h2>
-            <strong>Likely type:</strong> {result.get("scam_type", "Unknown")}
+
+            <strong>Risk Score:</strong> {risk_score}/100
+            <br>
+
+            <strong>Likely type:</strong>
+            {result.get("scam_type", "Unknown")}
+
             <br><br>
-            {result.get("summary", "")}
+
+            {result.get("explanation", "")}
         </div>
         """,
         unsafe_allow_html=True
@@ -312,13 +332,24 @@ def display_results(result):
 
     with left:
         st.markdown("### 🚩 Red Flags")
-        for flag in result.get("red_flags", []):
-            st.write(f"• {flag}")
+
+        red_flags = result.get("red_flags", [])
+
+        if red_flags:
+            for flag in red_flags:
+                st.write(f"• {flag}")
+        else:
+            st.write("No major red flags detected.")
 
     with right:
         st.markdown("### 🛡️ What You Should Do")
-        for action in result.get("recommended_actions", []):
-            st.write(f"✓ {action}")
+
+        recommended_action = result.get(
+            "recommended_action",
+            "Use caution and verify the sender."
+        )
+
+        st.write(recommended_action)
 
     st.info(
         "AI can make mistakes. Verify important emails through the organization's official website."
