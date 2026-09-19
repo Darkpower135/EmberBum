@@ -1,5 +1,6 @@
 import streamlit as st
 import requests
+import textwrap
 
 BACKEND_URL = "http://127.0.0.1:8000/analyze"
 
@@ -251,7 +252,7 @@ def run_app():
                     response = requests.post(
                         BACKEND_URL,
                         json={"message": email_text},
-                        timeout=30
+                        timeout=(5, 90)
                     )
 
                     if response.status_code == 200:
@@ -306,24 +307,32 @@ def display_results(result):
         emoji = "🟢"
 
     st.markdown(
-        f"""
-        <div class="{css_class}">
-            <div class="section-label">Risk Assessment</div>
+        textwrap.dedent(
+            f"""
+            <div class="{css_class}">
+                <div class="section-label">Risk Assessment</div>
 
-            <h2>{emoji} {risk} RISK</h2>
+                <h2>{emoji} {risk} RISK</h2>
 
-            <strong>Risk Score:</strong> {risk_score}/100
-            <br>
+                <strong>Risk Score:</strong> {risk_score}/100
+                <br>
 
-            <strong>Likely type:</strong>
-            {result.get("scam_type", "Unknown")}
-
-            <br><br>
-
-            {result.get("explanation", "")}
-        </div>
-        """,
+                <strong>Likely type:</strong>
+                {result.get("scam_type", "Unknown")}
+            </div>
+            """
+        ),
         unsafe_allow_html=True
+    )
+
+    st.write("")
+
+    st.markdown("### Why?")
+    st.write(
+        result.get(
+            "explanation",
+            "No explanation was provided."
+        )
     )
 
     st.write("")
