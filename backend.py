@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from google import genai
 from pydantic import BaseModel, Field
 
+MOCK_MODE = False
 
 # ---------------------------------------------------------
 # LOAD ENVIRONMENT VARIABLES
@@ -210,6 +211,27 @@ def analyze_message(request: ScamRequest):
         raise HTTPException(
             status_code=400,
             detail="Message cannot be empty."
+        )
+
+    if MOCK_MODE:
+        return ScamAnalysis(
+            risk_score=94,
+            risk_level="high",
+            scam_type="Phishing",
+            red_flags=[
+                "Uses urgent language",
+                "Threatens account suspension",
+                "Requests immediate action",
+                "Contains a suspicious link"
+            ],
+            explanation=(
+                "This message uses urgency and account threats to pressure "
+                "the recipient into taking immediate action."
+            ),
+            recommended_action=(
+                "Do not click any links. Visit the organization's official "
+                "website directly and verify the message there."
+            )
         )
 
     try:

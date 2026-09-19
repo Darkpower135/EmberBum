@@ -1,6 +1,6 @@
 import streamlit as st
 import requests
-import textwrap
+
 
 BACKEND_URL = "http://127.0.0.1:8000/analyze"
 
@@ -306,22 +306,18 @@ def display_results(result):
         css_class = "low-risk"
         emoji = "🟢"
 
+    risk_card = (
+        f'<div class="{css_class}">'
+        f'<div class="section-label">Risk Assessment</div>'
+        f'<h2>{emoji} {risk} RISK</h2>'
+        f'<strong>Risk Score:</strong> {risk_score}/100'
+        f'<br>'
+        f'<strong>Likely type:</strong> {result.get("scam_type", "Unknown")}'
+        f'</div>'
+    )
+
     st.markdown(
-        textwrap.dedent(
-            f"""
-            <div class="{css_class}">
-                <div class="section-label">Risk Assessment</div>
-
-                <h2>{emoji} {risk} RISK</h2>
-
-                <strong>Risk Score:</strong> {risk_score}/100
-                <br>
-
-                <strong>Likely type:</strong>
-                {result.get("scam_type", "Unknown")}
-            </div>
-            """
-        ),
+        risk_card,
         unsafe_allow_html=True
     )
 
